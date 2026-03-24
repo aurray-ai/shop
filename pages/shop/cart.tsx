@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { TrashIcon } from "@heroicons/react/24/outline";
@@ -22,6 +23,8 @@ function formatCurrency(value: number): string {
 
 export default function CartPage() {
   const [cartLines, setCartLines] = useState<CartLine[]>([]);
+  const shopBaseUrl = (process.env.NEXT_PUBLIC_SHOP_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const canonicalUrl = `${shopBaseUrl}/shop/cart`;
 
   useEffect(() => {
     setCartLines(readCart());
@@ -48,6 +51,11 @@ export default function CartPage() {
     <>
       <Head>
         <title>Cart - Aurray Shop</title>
+        <meta
+          name="description"
+          content="Review cart items in the Aurray ecommerce checkout flow with product images, quantities, and order totals."
+        />
+        <link rel="canonical" href={canonicalUrl} />
       </Head>
       <ShopChrome
         cartCount={cartCount}
@@ -76,12 +84,15 @@ export default function CartPage() {
                     className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4"
                   >
                     <div className="flex items-center gap-4">
-                      <div
-                        className="h-16 w-16 rounded-xl"
-                        style={{
-                          background: `linear-gradient(145deg, ${product.palette.from}, ${product.palette.via}, ${product.palette.to})`,
-                        }}
-                      />
+                      <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-slate-100">
+                        <Image
+                          src={product.image}
+                          alt={product.imageAlt}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
                       <div>
                         <p className="font-medium text-slate-900">{product.name}</p>
                         <p className="text-sm text-slate-500">{product.category}</p>

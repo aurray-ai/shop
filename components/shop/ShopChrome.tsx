@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { ShoppingBagIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/router";
+import { ArrowRightOnRectangleIcon, ShoppingBagIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { DemoSessionUser, getDemoSessionUser, logoutDemoUser } from "@/lib/demoAuth";
 
 interface ShopChromeProps {
   title: string;
@@ -10,6 +13,21 @@ interface ShopChromeProps {
 }
 
 export default function ShopChrome({ title, subtitle, cartCount = 0, children }: ShopChromeProps) {
+  const router = useRouter();
+  const [sessionUser, setSessionUser] = useState<DemoSessionUser | null>(null);
+  const nextPath = router.asPath && router.asPath.startsWith("/") ? router.asPath : "/shop";
+  const loginHref = `/auth/login?next=${encodeURIComponent(nextPath)}`;
+  const registerHref = `/auth/register?next=${encodeURIComponent(nextPath)}`;
+
+  useEffect(() => {
+    setSessionUser(getDemoSessionUser());
+  }, []);
+
+  const handleLogout = () => {
+    logoutDemoUser();
+    router.push("/auth/login");
+  };
+
   return (
     <div className="public-theme min-h-screen bg-[radial-gradient(circle_at_top_left,_#f0fdfa_0,_#fefce8_35%,_#fff_70%)] text-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -39,6 +57,37 @@ export default function ShopChrome({ title, subtitle, cartCount = 0, children }:
                 Cart
                 <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">{cartCount}</span>
               </Link>
+              {sessionUser ? (
+                <>
+                  <span className="hidden items-center gap-1 rounded-full border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 sm:inline-flex">
+                    <UserCircleIcon className="h-4 w-4" />
+                    {sessionUser.email}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+                  >
+                    <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={loginHref}
+                    className="rounded-full border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href={registerHref}
+                    className="rounded-full bg-cyan-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-cyan-700"
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
           <div className="px-5 py-6 sm:px-7">

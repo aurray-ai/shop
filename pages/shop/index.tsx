@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -17,6 +18,9 @@ function formatCurrency(value: number): string {
 
 export default function ShopProductListPage() {
   const [cartCount, setCartCount] = useState(0);
+  const shopBaseUrl = (process.env.NEXT_PUBLIC_SHOP_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const canonicalUrl = `${shopBaseUrl}/shop`;
+  const listPreviewImage = `${shopBaseUrl}${shopProducts[0]?.image || "/images/Focus Headphones.jpg"}`;
 
   useEffect(() => {
     setCartCount(getCartCount(readCart()));
@@ -31,6 +35,42 @@ export default function ShopProductListPage() {
     []
   );
 
+  const productListStructuredData = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Aurray Ecommerce Product List",
+      itemListElement: shopProducts.map((product, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${shopBaseUrl}/shop/product/${product.slug}`,
+        item: {
+          "@type": "Product",
+          name: product.name,
+          sku: product.sku,
+          category: product.category,
+          image: [`${shopBaseUrl}${product.image}`],
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "GBP",
+            price: product.price.toFixed(2),
+            availability:
+              product.availability === "in_stock"
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+            url: `${shopBaseUrl}/shop/product/${product.slug}`,
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating.toFixed(1),
+            reviewCount: product.reviews,
+          },
+        },
+      })),
+    }),
+    [shopBaseUrl]
+  );
+
   const handleAddToCart = (slug: string, name: string) => {
     const nextLines = addToCart(slug, 1);
     setCartCount(getCartCount(nextLines));
@@ -40,7 +80,31 @@ export default function ShopProductListPage() {
   return (
     <>
       <Head>
-        <title>Shop Products - Aurray</title>
+        <title>Aurray Shop | Ecommerce Product Catalog</title>
+        <meta
+          name="description"
+          content="Browse Aurray ecommerce products with real images, pricing, ratings, and detailed product pages for reliable product data extraction."
+        />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Aurray Shop | Ecommerce Product Catalog" />
+        <meta
+          property="og:description"
+          content="Explore Aurray workspace products with SEO-ready product detail pages and structured product metadata."
+        />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={listPreviewImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Aurray Shop | Ecommerce Product Catalog" />
+        <meta
+          name="twitter:description"
+          content="Product catalog with real images, prices, and structured ecommerce metadata."
+        />
+        <meta name="twitter:image" content={listPreviewImage} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productListStructuredData) }}
+        />
       </Head>
 
       <ShopChrome
@@ -82,12 +146,16 @@ export default function ShopProductListPage() {
                 {topRatedProduct.rating.toFixed(1)} ({topRatedProduct.reviews} reviews)
               </div>
               <p className="mt-3 text-sm text-slate-600">{topRatedProduct.description}</p>
-              <div
-                className="mt-4 h-28 rounded-2xl"
-                style={{
-                  background: `linear-gradient(140deg, ${topRatedProduct.palette.from}, ${topRatedProduct.palette.via} 52%, ${topRatedProduct.palette.to})`,
-                }}
-              />
+              <div className="relative mt-4 h-28 overflow-hidden rounded-2xl border border-slate-100">
+                <Image
+                  src={topRatedProduct.image}
+                  alt={topRatedProduct.imageAlt}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 33vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
               <div className="mt-4 flex items-center justify-between">
                 <p className="text-lg font-semibold text-slate-900">{formatCurrency(topRatedProduct.price)}</p>
                 <Link
@@ -111,25 +179,27 @@ export default function ShopProductListPage() {
             {shopProducts.map((product) => (
               <article
                 key={product.slug}
+                data-product-slug={product.slug}
+                data-product-sku={product.sku}
                 className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <div
-                  className="relative h-52 p-4"
-                  style={{
-                    background: `linear-gradient(145deg, ${product.palette.from}, ${product.palette.via} 48%, ${product.palette.to})`,
-                  }}
-                >
-                  <div className="absolute inset-0 opacity-30">
-                    <div className="absolute -right-7 top-4 h-24 w-24 rounded-full bg-white/35 blur-sm" />
-                    <div className="absolute bottom-5 left-5 h-14 w-14 rounded-full bg-white/20" />
-                  </div>
-                  <div className="relative flex h-full items-end justify-between">
-                    <p className="max-w-[78%] text-base font-semibold text-white drop-shadow">{product.name}</p>
-                    {product.badge && (
-                      <span className="rounded-full bg-white/85 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                        {product.badge}
-                      </span>
-                    )}
+                <div className="relative h-52 overflow-hidden">
+                  <Image
+                    src={product.image}
+                    alt={product.imageAlt}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                    className="object-cover transition duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/70 via-slate-900/30 to-transparent p-4">
+                    <div className="flex items-end justify-between">
+                      <p className="max-w-[78%] text-base font-semibold text-white drop-shadow">{product.name}</p>
+                      {product.badge && (
+                        <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                          {product.badge}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

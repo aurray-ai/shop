@@ -1,7 +1,10 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import ShopChrome from "@/components/shop/ShopChrome";
+import { isDemoAuthenticated } from "@/lib/demoAuth";
 import { CartLine, clearCart, getCartCount, getCartSubtotal, readCart, toDetailedLines } from "@/lib/shopCart";
 
 function formatCurrency(value: number): string {
@@ -12,8 +15,13 @@ function formatCurrency(value: number): string {
 }
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [cartLines, setCartLines] = useState<CartLine[]>([]);
   const [isPlaced, setIsPlaced] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const shopBaseUrl = (process.env.NEXT_PUBLIC_SHOP_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const canonicalUrl = `${shopBaseUrl}/shop/checkout`;
   const [paymentMethod, setPaymentMethod] = useState<"card" | "paypal">("card");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,6 +33,18 @@ export default function CheckoutPage() {
   useEffect(() => {
     setCartLines(readCart());
   }, []);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const authed = isDemoAuthenticated();
+    setIsAuthenticated(authed);
+    setAuthChecked(true);
+
+    if (!authed) {
+      router.replace(`/auth/login?next=${encodeURIComponent("/shop/checkout")}`);
+    }
+  }, [router]);
 
   const detailed = useMemo(() => toDetailedLines(cartLines), [cartLines]);
   const cartCount = getCartCount(cartLines);
@@ -45,13 +65,39 @@ export default function CheckoutPage() {
     <>
       <Head>
         <title>Checkout - Aurray Shop</title>
+        <meta
+          name="description"
+          content="Complete checkout for Aurray ecommerce products with shipping form, payment method, and itemized order summary."
+        />
+        <link rel="canonical" href={canonicalUrl} />
       </Head>
       <ShopChrome
         cartCount={cartCount}
         title="Checkout"
         subtitle="Final step of the ecommerce flow with shipping details, payment, and order summary."
       >
-        {isPlaced ? (
+        {!authChecked || !isAuthenticated ? (
+          <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Login required for checkout</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Redirecting to login. You can register first if you do not have an account.
+            </p>
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <Link
+                href="/auth/login?next=%2Fshop%2Fcheckout"
+                className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-700"
+              >
+                Login
+              </Link>
+              <Link
+                href="/auth/register?next=%2Fshop%2Fcheckout"
+                className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Register
+              </Link>
+            </div>
+          </section>
+        ) : isPlaced ? (
           <section className="mx-auto max-w-2xl rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 text-center shadow-sm">
             <p className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
               Order confirmed
@@ -186,10 +232,21 @@ export default function CheckoutPage() {
               <h2 className="text-lg font-semibold text-slate-900">Order Summary</h2>
               <div className="mt-4 space-y-3">
                 {detailed.map(({ product, quantity }) => (
-                  <div key={product.slug} className="flex items-center justify-between gap-2 text-sm">
-                    <div>
-                      <p className="font-medium text-slate-800">{product.name}</p>
-                      <p className="text-slate-500">Qty {quantity}</p>
+                  <div key={product.slug} className="flex items-center justify-between gap-3 text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-slate-100">
+                        <Image
+                          src={product.image}
+                          alt={product.imageAlt}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-800">{product.name}</p>
+                        <p className="text-slate-500">Qty {quantity}</p>
+                      </div>
                     </div>
                     <p className="font-medium text-slate-900">{formatCurrency(product.price * quantity)}</p>
                   </div>
