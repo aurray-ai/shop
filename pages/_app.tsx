@@ -10,7 +10,7 @@ export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [shouldLoadTracker, setShouldLoadTracker] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  const trackerDomainId = process.env.NEXT_PUBLIC_TRACKER_DOMAIN_ID || '76504720';
+  const trackerDomainId = process.env.NEXT_PUBLIC_TRACKER_DOMAIN_ID || '65281949';
 
   // const trackerSrc =
   //   process.env.NEXT_PUBLIC_TRACKER_URL ||
