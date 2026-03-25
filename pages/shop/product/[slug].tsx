@@ -17,6 +17,14 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+function formatReviewDate(value: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
 interface ProductItemPageProps {
   product: ShopProduct;
 }
@@ -83,6 +91,26 @@ export default function ProductItemPage({ product }: ProductItemPageProps) {
         ratingValue: product.rating.toFixed(1),
         reviewCount: product.reviews,
       },
+      additionalProperty: product.specs.map((spec) => ({
+        "@type": "PropertyValue",
+        name: spec.label,
+        value: spec.value,
+      })),
+      review: product.customerReviews.map((review) => ({
+        "@type": "Review",
+        author: {
+          "@type": "Person",
+          name: review.author,
+        },
+        datePublished: review.datePublished,
+        name: review.title,
+        reviewBody: review.body,
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: review.rating,
+          bestRating: 5,
+        },
+      })),
       offers: {
         "@type": "Offer",
         url: canonicalUrl,
@@ -236,6 +264,78 @@ export default function ProductItemPage({ product }: ProductItemPageProps) {
               </Link>
             </div>
           </article>
+        </section>
+
+        <section className="mt-6 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Product Description</p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-900">Detailed overview</h2>
+              </div>
+            </div>
+            <div className="mt-5 space-y-4">
+              {product.longDescription.map((paragraph) => (
+                <p key={paragraph} className="text-sm leading-7 text-slate-600 sm:text-base">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Specifications</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-900">Tech specs</h2>
+            <dl className="mt-5 space-y-3">
+              {product.specs.map((spec) => (
+                <div
+                  key={`${spec.label}-${spec.value}`}
+                  className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3"
+                >
+                  <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{spec.label}</dt>
+                  <dd className="mt-1 text-sm font-medium text-slate-700">{spec.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Customer Reviews</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">What customers are saying</h2>
+            </div>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-slate-700">
+              <span className="font-semibold text-slate-900">{product.rating.toFixed(1)}</span> average rating from{" "}
+              <span className="font-semibold text-slate-900">{product.reviews}</span> reviews
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            {product.customerReviews.map((review) => (
+              <article
+                key={`${review.author}-${review.datePublished}`}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+              >
+                <div className="flex items-center gap-1 text-amber-400">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <StarIcon
+                      key={`${review.author}-star-${index}`}
+                      className={`h-4 w-4 ${index < review.rating ? "text-amber-400" : "text-slate-200"}`}
+                    />
+                  ))}
+                </div>
+                <h3 className="mt-3 text-lg font-semibold text-slate-900">{review.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{review.body}</p>
+                <div className="mt-4 border-t border-slate-200 pt-4 text-sm text-slate-500">
+                  <p className="font-medium text-slate-700">{review.author}</p>
+                  <p>{review.location}</p>
+                  <p>{formatReviewDate(review.datePublished)}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
       </ShopChrome>
     </>
