@@ -12,11 +12,9 @@ export default function App({ Component, pageProps }: AppProps) {
   const [authChecked, setAuthChecked] = useState(false);
   const trackerDomainId = process.env.NEXT_PUBLIC_TRACKER_DOMAIN_ID || '65281949';
 
-  // const trackerSrc =
-  //   process.env.NEXT_PUBLIC_TRACKER_URL ||
-  //   `http://localhost:8000/api/v1/crm/tracking/${trackerDomainId}.js`;
-
-  const trackerSrc = process.env.NEXT_PUBLIC_TRACKER_URL || 'https://api.aurray.co.uk/crm247.js';
+  const trackerSrc =
+    process.env.NEXT_PUBLIC_TRACKER_URL ||
+    `https://api.aurray.co.uk/api/v1/crm/tracking/${trackerDomainId}.js`;
 
   const requiresAuth = router.pathname === '/shop/checkout';
 
