@@ -14,7 +14,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
   const trackerSrc =
     process.env.NEXT_PUBLIC_TRACKER_URL ||
-    `https://api.aurray.co.uk/api/v1/crm/tracking/${trackerDomainId}.js`;
+    'https://tracker.aurray.co.uk/crm247.js';
 
   const requiresAuth = router.pathname === '/shop/checkout';
 
